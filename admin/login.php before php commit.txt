@@ -12,48 +12,6 @@
  * This file is intentionally self-contained (no shared header/footer)
  * so it remains completely isolated from public pages.
  */
-
-session_start();
-
-if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] == true) {
-    header('Location: dashboard.php');
-    exit;
-}
-
-$error = '';
-$username = '';
-
-// TODO: Replace this sample authentication with a real database query.
-// SQL guy: verify the submitted username/password against the admin table.
-// On success, set $_SESSION['admin_logged_in'] = true and redirect to dashboard.php.
-$sample_admin_username = 'admin';
-$sample_admin_password = 'admin123';
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['username'])) {
-        $username = trim($_POST['username']);
-    }
-
-    $password = '';
-    if (isset($_POST['password'])) {
-        $password = $_POST['password'];
-    }
-
-    if ($username == '' || $password == '') {
-        $error = 'Please enter both username and password.';
-    } else {
-        if ($username == $sample_admin_username && $password == $sample_admin_password) {
-            $_SESSION['admin_logged_in'] = true;
-            $_SESSION['admin_username'] = $username;
-            $_SESSION['message'] = 'You are now logged in as admin.';
-
-            header('Location: dashboard.php');
-            exit;
-        } else {
-            $error = 'Invalid username or password.';
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -186,12 +144,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <div class="admin-card">
 
-    <?php if ($error != ''): ?>
-        <div style="padding: 12px 32px 0; color: #b00020; font-size: 13px;">
-            <?= htmlspecialchars($error) ?>
-        </div>
-    <?php endif; ?>
-
     <!-- Header -->
     <div class="admin-header">
         <div class="admin-badge">🔒 Restricted Access</div>
@@ -202,45 +154,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <!-- Body -->
     <div class="admin-body">
 
-        <form method="post" action="login.php" onsubmit="return handleAdminLogin();">
-            <div class="lock-icon" aria-hidden="true">🔑</div>
+        <div class="lock-icon" aria-hidden="true">🔑</div>
 
-            <div class="form-group">
-                <label class="form-label" for="admin-user">Admin Username <span>*</span></label>
-                <div class="input-row">
-                    <input  class="form-input has-icon"
-                            type="text"
-                            id="admin-user"
-                            name="username"
-                            value="<?= htmlspecialchars($username) ?>"
-                            placeholder="admin@pasonanca.gov.ph"
-                            autocomplete="username">
-                    <span class="input-icon" aria-hidden="true">👤</span>
-                </div>
+        <div class="form-group">
+            <label class="form-label" for="admin-user">Admin Username <span>*</span></label>
+            <div class="input-row">
+                <input  class="form-input has-icon"
+                        type="text"
+                        id="admin-user"
+                        placeholder="admin@pasonanca.gov.ph"
+                        autocomplete="username">
+                <span class="input-icon" aria-hidden="true">👤</span>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label class="form-label" for="admin-pass">Password <span>*</span></label>
-                <div class="input-row">
-                    <input  class="form-input has-icon"
-                            type="password"
-                            id="admin-pass"
-                            name="password"
-                            placeholder="Enter your password"
-                            autocomplete="current-password">
-                    <span   class="input-icon"
-                            onclick="togglePw('admin-pass', this)"
-                            title="Show / hide password"
-                            role="button"
-                            tabindex="0"
-                            aria-label="Toggle password visibility">👁</span>
-                </div>
+        <div class="form-group">
+            <label class="form-label" for="admin-pass">Password <span>*</span></label>
+            <div class="input-row">
+                <input  class="form-input has-icon"
+                        type="password"
+                        id="admin-pass"
+                        placeholder="Enter your password"
+                        autocomplete="current-password">
+                <span   class="input-icon"
+                        onclick="togglePw('admin-pass', this)"
+                        title="Show / hide password"
+                        role="button"
+                        tabindex="0"
+                        aria-label="Toggle password visibility">👁</span>
             </div>
+        </div>
 
-            <button class="btn-primary" type="submit">
-                Sign In to Admin Panel
-            </button>
-        </form>
+        <!-- TODO: wire up to your backend auth endpoint -->
+        <button class="btn-primary" onclick="handleAdminLogin()">
+            Sign In to Admin Panel
+        </button>
 
         <hr class="admin-divider">
 
@@ -255,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <script>
     /**
      * handleAdminLogin()
-     * Basic client-side validation before the form submits.
+     * Placeholder — replace with a real fetch() POST to your auth endpoint.
      */
     function handleAdminLogin() {
         const user = document.getElementById('admin-user').value.trim();
@@ -263,13 +211,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if (!user || !pass) {
             alert('Please enter your username and password.');
-            return false;
+            return;
         }
 
-        return true;
+        // Example: POST to /admin/auth.php
+        // fetch('/admin/auth.php', { method: 'POST', ... })
+        alert('Admin login submitted. Connect to your backend to complete authentication.');
     }
 </script>
 </body>
 </html>
-
-
