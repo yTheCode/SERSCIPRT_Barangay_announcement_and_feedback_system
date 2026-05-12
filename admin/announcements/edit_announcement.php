@@ -52,24 +52,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (mb_strlen($form['title']) > 150) {
         $errors[] = 'Title must be 150 characters or fewer.';
     }
-
     if ($form['description'] === '') {
         $errors[] = 'Description is required.';
     }
-
     if ($form['date_posted'] === '') {
         $errors[] = 'Date posted is required.';
     }
 
     if (empty($errors)) {
-        // TODO: DATABASE UPDATE
-        // SQL guy: UPDATE ANNOUNCEMENT
-        // SET Title = $form['title'], Description = $form['description'], DatePosted = $form['date_posted']
-        // WHERE AnnouncementID = $ann_id
-
-        $_SESSION['message'] = 'Announcement "' . htmlspecialchars($form['title']) . '" was updated successfully!';
-        header('Location: manage_announcement_dashboard.php');
-        exit;
+        // Use the working update logic from edit.php
+        $update = $conn->prepare("UPDATE announcements SET title = ?, description = ?, date_posted = ? WHERE id = ?");
+        $update->bind_param("sssi", $form['title'], $form['description'], $form['date_posted'], $ann_id);
+        if ($update->execute()) {
+            $_SESSION['message'] = 'Announcement "' . htmlspecialchars($form['title']) . '" was updated successfully!';
+            header('Location: manage_announcement_dashboard.php');
+            exit;
+        } else {
+            $errors[] = "Failed to update announcement.";
+        }
+        $update->close();
     }
 }
 ?>

@@ -20,7 +20,7 @@ if ($id <= 0) {
 if (!isset($_GET['confirm'])) {
     echo '<h2>Delete Announcement</h2>';
     echo '<p>Are you sure you want to delete this announcement?</p>';
-    echo '<a href="delete.php?id=' . $id . '&confirm=1">Yes, Delete</a> | <a href="manage.php">Cancel</a>';
+    echo '<a href="delete_announcement.php?id=' . $id . '&confirm=1">Yes, Delete</a> | <a href="manage_announcement_dashboard.php">Cancel</a>';
     exit();
 }
 
@@ -28,7 +28,7 @@ if (!isset($_GET['confirm'])) {
 $stmt = $conn->prepare("DELETE FROM announcements WHERE id = ?");
 $stmt->bind_param("i", $id);
 if ($stmt->execute()) {
-    header('Location: manage.php?msg=deleted');
+    header('Location: manage_announcement_dashboard.php?msg=deleted');
     exit();
 } else {
     echo "Failed to delete announcement.";
