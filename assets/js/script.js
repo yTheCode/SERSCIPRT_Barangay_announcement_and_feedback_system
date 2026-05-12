@@ -1,7 +1,6 @@
 // ══════════════════════════════════════════
 //  BARANGAY PASONANCA PORTAL — assets/js/script.js
-//  Refactored for multi-page PHP architecture.
-//  No more goTo() SPA navigation — pages are real URLs.
+//  Shared front-end interactivity for all pages.
 // ══════════════════════════════════════════
 
 // ── Password Visibility Toggle ──
@@ -34,12 +33,12 @@ function selectRating(btn) {
 
 // ── Feedback: Submit ──
 function submitFeedback() {
-    const subject = document.getElementById('fb-subject')?.value;
-    const msg     = document.getElementById('fb-message')?.value;
+    const subject = document.getElementById('fb-subject')?.value.trim();
+    const msg     = document.getElementById('fb-message')?.value.trim();
     const cat     = document.getElementById('fb-category')?.value;
 
     if (!subject || !msg || !cat) {
-        alert('Please fill in all required fields marked with *');
+        showFormError('Please fill in all required fields marked with *');
         return;
     }
 
@@ -52,7 +51,6 @@ function closeSuccess() {
     const overlay = document.getElementById('success-overlay');
     if (overlay) overlay.classList.remove('show');
 
-    // Clear form fields
     ['fb-subject', 'fb-message'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -60,8 +58,41 @@ function closeSuccess() {
     const counter = document.getElementById('char-count');
     if (counter) counter.textContent = '0 / 500 characters';
 
-    // Return to home page
     window.location.href = '/public/index.php';
+}
+
+// ── Inline error helper ──
+function showFormError(msg) {
+    let el = document.getElementById('inline-form-error');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'inline-form-error';
+        el.className = 'alert alert-error';
+        const body = document.querySelector('.form-body') || document.querySelector('.admin-form-body');
+        if (body) body.prepend(el);
+    }
+    el.textContent = '⚠ ' + msg;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => el.remove(), 5000);
+}
+
+// ── Admin login validation ──
+function handleAdminLogin() {
+    const user = document.getElementById('admin-user')?.value.trim();
+    const pass = document.getElementById('admin-pass')?.value;
+    if (!user || !pass) {
+        showFormError('Please enter your username and password.');
+        return false;
+    }
+    return true;
+}
+
+// ── Admin: Confirm Delete ──
+function confirmDelete(id, title) {
+    const msg = `Are you sure you want to delete:\n"${title}"?\n\nThis action cannot be undone.`;
+    if (confirm(msg)) {
+        window.location.href = `delete_announcement.php?id=${id}`;
+    }
 }
 
 // ══════════════════════════════════════════
@@ -89,12 +120,22 @@ function closeMenu() {
     document.body.style.overflow = '';
 }
 
-// Close on Escape key
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeMenu();
 });
 
-// Close if viewport returns to desktop width
 window.addEventListener('resize', () => {
     if (window.innerWidth > 768) closeMenu();
+});
+
+// ── Auto-dismiss flash messages ──
+document.addEventListener('DOMContentLoaded', () => {
+    const flash = document.querySelector('.flash-msg');
+    if (flash) {
+        setTimeout(() => {
+            flash.style.transition = 'opacity .4s ease';
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 400);
+        }, 4000);
+    }
 });
