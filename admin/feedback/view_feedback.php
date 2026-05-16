@@ -20,6 +20,20 @@ if (isset($_SESSION['message'])) {
     unset($_SESSION['message']);
 }
 
+// Handle mark-as-read POST from this page
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_read_id'])) {
+    $markId = (int) $_POST['mark_read_id'];
+    $dbUp = @mysqli_connect('127.0.0.1', 'root', '', 'barangay_system');
+    if ($dbUp) {
+        $markIdEsc = mysqli_real_escape_string($dbUp, (string)$markId);
+        mysqli_query($dbUp, "UPDATE feedback SET Is_read = 1 WHERE FeedbackID = {$markIdEsc}");
+        mysqli_close($dbUp);
+    }
+    // redirect to avoid form resubmission and to show updated list
+    header('Location: view_feedback.php');
+    exit;
+}
+
 // Rating labels map
 $rating_emojis = array(1 => '😞', 2 => '😕', 3 => '😐', 4 => '🙂', 5 => '😄');
 
@@ -41,44 +55,8 @@ if ($dbConn) {
     mysqli_close($dbConn);
 }
 
-// If DB was empty or unavailable, use sample data for testing.
-if (empty($feedbacks)) {
-    $feedbacks = array(
-        array(
-            'FeedbackID'        => 1,
-            'ResidentName'      => 'Maria Santos',
-            'Purok'             => 'Purok 1 – Sampaguita',
-            'Feedback_Category' => 'Infrastructure & Roads',
-            'Message_Subject'   => 'Road repair needed on Calle Pasonanca',
-            'Message_content'   => 'The road in front of our barangay center has many potholes that need immediate repair. Residents, especially motorcyclists, are at risk of accidents.',
-            'Rating'            => 3,
-            'Is_read'           => 1,
-            'DateSubmitted'     => '2024-05-02',
-        ),
-        array(
-            'FeedbackID'        => 2,
-            'ResidentName'      => 'Juan Dela Cruz',
-            'Purok'             => 'Purok 2 – Narra',
-            'Feedback_Category' => 'Health & Sanitation',
-            'Message_Subject'   => 'Thank you for the health program!',
-            'Message_content'   => 'The recent health and wellness program organized by the barangay was very helpful to our community. The free check-ups and medicines were greatly appreciated.',
-            'Rating'            => 5,
-            'Is_read'           => 0,
-            'DateSubmitted'     => '2024-05-03',
-        ),
-        array(
-            'FeedbackID'        => 3,
-            'ResidentName'      => '',
-            'Purok'             => 'Purok 3 – Maharlika',
-            'Feedback_Category' => 'Health & Sanitation',
-            'Message_Subject'   => 'Request for regular garbage collection schedule',
-            'Message_content'   => 'Can the barangay provide a more regular garbage collection schedule? Currently it is inconsistent and sometimes garbage piles up for several days.',
-            'Rating'            => 2,
-            'Is_read'           => 1,
-            'DateSubmitted'     => '2024-05-04',
-        ),
-    );
-}
+// No sample/fallback data — when the database has no feedback rows the page
+// will display the empty-state message. This keeps the admin view honest.
 
 // Count unread
 $unread_count = 0;
@@ -181,7 +159,7 @@ foreach ($feedbacks as $fb) {
                     <?php endif; ?>
 
                     <div class="fb-meta">
-                        <div class="fb-subject"><?= htmlspecialchars($fb['Message_Subject']) ?></div>
+                        <div class="fb-subject"><a href="view_feedback.php?view_id=<?= urlencode($fb['FeedbackID']) ?>"><?= htmlspecialchars($fb['Message_Subject']) ?></a></div>
                         <div class="fb-info">
                             <span>👤 <?= $fb['ResidentName'] !== '' ? htmlspecialchars($fb['ResidentName']) : '<em>Anonymous</em>' ?></span>
                             <span>📍 <?= htmlspecialchars($fb['Purok']) ?></span>
@@ -194,6 +172,12 @@ foreach ($feedbacks as $fb) {
                         <span class="<?= $fb['Is_read'] ? 'status-read' : 'status-unread' ?>">
                             <?= $fb['Is_read'] ? '✓ Read' : '● Unread' ?>
                         </span>
+                        <?php if (!$fb['Is_read']): ?>
+                            <form method="post" style="margin-top:6px;">
+                                <input type="hidden" name="mark_read_id" value="<?= htmlspecialchars($fb['FeedbackID']) ?>">
+                                <button type="submit" class="btn-small">Mark as read</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
 
                 </div>
@@ -221,6 +205,34 @@ foreach ($feedbacks as $fb) {
 
             </div>
         <?php endforeach; ?>
+    <?php endif; ?>
+
+    <!-- Detail view modal / panel when view_id is present -->
+    <?php if (isset($_GET['view_id'])):
+        $viewId = (int)$_GET['view_id'];
+        // find in loaded feedbacks
+        $detail = null;
+        foreach ($feedbacks as $f) if ((int)$f['FeedbackID'] === $viewId) { $detail = $f; break; }
+    ?>
+        <?php if ($detail): ?>
+            <div class="fb-detail-panel">
+                <div class="fb-detail-head">
+                    <h3><?= htmlspecialchars($detail['Message_Subject']) ?></h3>
+                    <div style="font-size:13px;color:var(--gray-600);">👤 <?= $detail['ResidentName'] !== '' ? htmlspecialchars($detail['ResidentName']) : '<em>Anonymous</em>' ?> · 📍 <?= htmlspecialchars($detail['Purok']) ?> · 📅 <?= htmlspecialchars($detail['DateSubmitted']) ?></div>
+                </div>
+                <div class="fb-detail-body" style="margin-top:12px;">
+                    <?= nl2br(htmlspecialchars($detail['Message_content'])) ?>
+                </div>
+                <div style="margin-top:12px;">
+                    <?php if (!$detail['Is_read']): ?>
+                        <form method="post"><input type="hidden" name="mark_read_id" value="<?= htmlspecialchars($detail['FeedbackID']) ?>"><button type="submit" class="btn-primary">Mark as Read</button></form>
+                    <?php else: ?>
+                        <span class="status-read">✓ Read</span>
+                    <?php endif; ?>
+                    <a href="view_feedback.php" class="btn-link" style="margin-left:12px;">Close</a>
+                </div>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 
 </main>
