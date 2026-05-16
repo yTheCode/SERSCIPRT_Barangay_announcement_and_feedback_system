@@ -1,11 +1,8 @@
 <?php
 
 session_start();
-require_once '../../config/db.php';
-
-// Auth check
-if (!isset($_SESSION['admin_id'])) {
-    header('Location: ../login.php');
+if (!isset($_SESSION['admin_logged_in'])) {
+    header('Location: ../login_admin.php');
     exit();
 }
 
@@ -16,19 +13,14 @@ if ($id <= 0) {
     exit();
 }
 
-// Confirm delete
-if (!isset($_GET['confirm'])) {
-    echo '<h2>Delete Announcement</h2>';
-    echo '<p>Are you sure you want to delete this announcement?</p>';
-    echo '<a href="delete_announcement.php?id=' . $id . '&confirm=1">Yes, Delete</a> | <a href="manage_announcement_dashboard.php">Cancel</a>';
-    exit();
-}
+require_once __DIR__ . '/../../config/db.php';
 
 // Delete row
-$stmt = $conn->prepare("DELETE FROM announcements WHERE id = ?");
+$stmt = $conn->prepare("DELETE FROM announcements WHERE ID = ?");
 $stmt->bind_param("i", $id);
 if ($stmt->execute()) {
-    header('Location: manage_announcement_dashboard.php?msg=deleted');
+    $_SESSION['message'] = 'Announcement deleted successfully.';
+    header('Location: manage_announcement_dashboard.php');
     exit();
 } else {
     echo "Failed to delete announcement.";

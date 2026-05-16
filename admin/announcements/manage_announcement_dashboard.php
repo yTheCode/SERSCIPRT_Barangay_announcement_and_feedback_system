@@ -20,25 +20,18 @@ if (isset($_SESSION['message'])) {
     unset($_SESSION['message']);
 }
 
-// TODO: Replace sample data with a database query.
-// SQL guy: SELECT AnnouncementID, Title, Description, DatePosted, AdminID
-// FROM ANNOUNCEMENT ORDER BY DatePosted DESC
-$announcements = array(
-    array(
-        'AnnouncementID' => 1,
-        'Title'          => 'Community Cleanup Drive',
-        'Description'    => 'Join us for a community cleanup drive this Saturday at 8:00 AM. Meeting point at the Barangay Hall. Please bring gloves and garbage bags.',
-        'DatePosted'     => '2024-05-10',
-        'AdminID'        => 1,
-    ),
-    array(
-        'AnnouncementID' => 2,
-        'Title'          => 'Health and Wellness Program',
-        'Description'    => 'Free health checkup and vaccination program for all residents. Conducted by the DOH and our Barangay Health Center.',
-        'DatePosted'     => '2024-05-12',
-        'AdminID'        => 1,
-    ),
-);
+require_once __DIR__ . '/../../config/db.php';
+
+$announcements = array();
+$stmt = $conn->prepare("SELECT ID AS AnnouncementID, Title, Description, `Date Posted` AS DatePosted FROM announcements ORDER BY `Date Posted` DESC, ID DESC");
+if ($stmt) {
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $announcements[] = $row;
+    }
+    $stmt->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

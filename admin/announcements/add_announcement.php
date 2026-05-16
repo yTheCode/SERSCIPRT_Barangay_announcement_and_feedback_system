@@ -20,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['title']       = isset($_POST['title'])       ? trim($_POST['title'])       : '';
     $form['description'] = isset($_POST['description']) ? trim($_POST['description']) : '';
     $form['date_posted'] = isset($_POST['date_posted']) ? trim($_POST['date_posted']) : '';
-    $admin_id            = isset($_SESSION['AdminID'])  ? $_SESSION['AdminID']        : 1;
 
     // Validation
     if ($form['title'] === '') {
@@ -38,14 +37,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // TODO: DATABASE INSERTION
-        // SQL guy: INSERT INTO ANNOUNCEMENT (Title, Description, DatePosted, AdminID)
-        // VALUES ($form['title'], $form['description'], $form['date_posted'], $admin_id)
-        // After successful insert, set flash message and redirect.
+        require_once __DIR__ . '/../../config/db.php';
 
-        $_SESSION['message'] = 'Announcement "' . htmlspecialchars($form['title']) . '" was posted successfully!';
-        header('Location: manage_announcement_dashboard.php');
-        exit;
+        $stmt = $conn->prepare("INSERT INTO announcements (Title, Description, `Date Posted`) VALUES (?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param('sss', $form['title'], $form['description'], $form['date_posted']);
+            if ($stmt->execute()) {
+                $_SESSION['message'] = 'Announcement "' . htmlspecialchars($form['title']) . '" was posted successfully!';
+                $stmt->close();
+                header('Location: manage_announcement_dashboard.php');
+                exit;
+            }
+            $errors[] = 'Failed to save announcement.';
+            $stmt->close();
+        } else {
+            $errors[] = 'Database error preparing insert.';
+        }
     }
 }
 ?>

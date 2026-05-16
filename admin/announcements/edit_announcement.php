@@ -24,15 +24,22 @@ if ($ann_id <= 0) {
     exit;
 }
 
-// TODO: Replace sample data with a real SELECT query.
-// SQL guy: SELECT AnnouncementID, Title, Description, DatePosted FROM ANNOUNCEMENT WHERE AnnouncementID = $ann_id
-// If no record found, redirect back to manage page.
-$announcement = array(
-    'AnnouncementID' => $ann_id,
-    'Title'          => 'Community Cleanup Drive',
-    'Description'    => 'Join us for a community cleanup drive this Saturday at 8:00 AM. Meeting point at the Barangay Hall. Please bring gloves and garbage bags.',
-    'DatePosted'     => '2024-05-10',
-);
+require_once __DIR__ . '/../../config/db.php';
+
+$announcement = null;
+$stmt = $conn->prepare("SELECT ID AS AnnouncementID, Title, Description, `Date Posted` AS DatePosted FROM announcements WHERE ID = ? LIMIT 1");
+if ($stmt) {
+    $stmt->bind_param('i', $ann_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $announcement = $result ? $result->fetch_assoc() : null;
+    $stmt->close();
+}
+
+if (!$announcement) {
+    header('Location: manage_announcement_dashboard.php');
+    exit;
+}
 
 // Prefill form with existing data (overridden by POST if re-submitted after error)
 $form = array(
@@ -60,17 +67,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // Use the working update logic from edit.php
-        $update = $conn->prepare("UPDATE announcements SET title = ?, description = ?, date_posted = ? WHERE id = ?");
-        $update->bind_param("sssi", $form['title'], $form['description'], $form['date_posted'], $ann_id);
-        if ($update->execute()) {
-            $_SESSION['message'] = 'Announcement "' . htmlspecialchars($form['title']) . '" was updated successfully!';
-            header('Location: manage_announcement_dashboard.php');
-            exit;
+        $update = $conn->prepare("UPDATE announcements SET Title = ?, Description = ?, `Date Posted` = ? WHERE ID = ?");
+        if ($update) {
+            $update->bind_param('sssi', $form['title'], $form['description'], $form['date_posted'], $ann_id);
+            if ($update->execute()) {
+                $_SESSION['message'] = 'Announcement "' . htmlspecialchars($form['title']) . '" was updated successfully!';
+                $update->close();
+                header('Location: manage_announcement_dashboard.php');
+                exit;
+            }
+            $errors[] = 'Failed to update announcement.';
+            $update->close();
         } else {
-            $errors[] = "Failed to update announcement.";
+            $errors[] = 'Database error preparing update.';
         }
-        $update->close();
     }
 }
 ?>
