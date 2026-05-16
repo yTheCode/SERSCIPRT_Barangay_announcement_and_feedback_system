@@ -9,8 +9,38 @@
 
 $pageTitle  = 'Home';
 $activePage = 'home';
-
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../config/db.php';
+
+// Fetch announcements from the database
+$announcements = [];
+$sql = "SELECT Title, Description, `Date Posted` FROM announcements ORDER BY `Date Posted` DESC";
+$result = $conn->query($sql);
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $announcements[] = $row;
+    }
+}
+
+// Live homepage stats
+$upcoming_count = 0;
+$this_month_count = 0;
+$feedback_count = 0;
+
+$result = $conn->query("SELECT COUNT(*) AS total FROM announcements WHERE `Date Posted` >= CURDATE()");
+if ($result && ($row = $result->fetch_assoc())) {
+    $upcoming_count = (int) $row['total'];
+}
+
+$result = $conn->query("SELECT COUNT(*) AS total FROM announcements WHERE YEAR(`Date Posted`) = YEAR(CURDATE()) AND MONTH(`Date Posted`) = MONTH(CURDATE())");
+if ($result && ($row = $result->fetch_assoc())) {
+    $this_month_count = (int) $row['total'];
+}
+
+$result = $conn->query("SELECT COUNT(*) AS total FROM feedback");
+if ($result && ($row = $result->fetch_assoc())) {
+    $feedback_count = (int) $row['total'];
+}
 ?>
 
 <!-- ══════════════════════════════════════════
@@ -48,9 +78,9 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- ── STATS ROW ── -->
 <div class="stats-row">
-    <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Upcoming</div></div>
-    <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">This Month</div></div>
-    <div class="stat-card"><div class="stat-num">47</div><div class="stat-label">Feedback</div></div>
+    <div class="stat-card"><div class="stat-num"><?= (int) $upcoming_count ?></div><div class="stat-label">Upcoming</div></div>
+    <div class="stat-card"><div class="stat-num"><?= (int) $this_month_count ?></div><div class="stat-label">This Month</div></div>
+    <div class="stat-card"><div class="stat-num"><?= (int) $feedback_count ?></div><div class="stat-label">Feedback</div></div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -81,49 +111,31 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 
     <!-- Announcements -->
+
     <div class="section-head" id="ann-section">
         <div class="section-title">All Announcements</div>
-        <span class="section-link">3 Upcoming · 0 Past</span>
+        <span class="section-link"><?php echo count($announcements); ?> Announcement(s)</span>
     </div>
 
-    <div class="ann-card">
-        <div class="ann-dot upcoming"></div>
-        <div style="flex:1;">
-            <div class="ann-title">Community Clean-up Drive</div>
-            <div class="ann-date">⏱ Posted March 2, 2026 · Event: March 6, 2026</div>
-            <div class="ann-body">
-                Join us this Saturday at 7:00 AM for our monthly barangay clean-up drive.
-                Meeting point: Barangay Hall. Please bring gloves and garbage bags.
+    <?php if (count($announcements) === 0): ?>
+        <div class="ann-card">
+            <div style="flex:1;">
+                <div class="ann-title">No announcements yet.</div>
             </div>
         </div>
-        <div class="ann-badge upcoming">Upcoming</div>
-    </div>
-
-    <div class="ann-card">
-        <div class="ann-dot upcoming"></div>
-        <div style="flex:1;">
-            <div class="ann-title">Free Medical Mission</div>
-            <div class="ann-date">⏱ Posted March 5, 2026 · Event: April 10, 2026</div>
-            <div class="ann-body">
-                DOH together with our health center will conduct free medical check-ups
-                and medicine distribution for all residents.
+    <?php else: ?>
+        <?php foreach ($announcements as $ann): ?>
+            <div class="ann-card">
+                <div class="ann-dot upcoming"></div>
+                <div style="flex:1;">
+                    <div class="ann-title"><?php echo htmlspecialchars($ann['Title']); ?></div>
+                    <div class="ann-date">⏱ Posted <?php echo date('F j, Y', strtotime($ann['Date Posted'])); ?></div>
+                    <div class="ann-body"><?php echo nl2br(htmlspecialchars($ann['Description'])); ?></div>
+                </div>
+                <div class="ann-badge upcoming">Upcoming</div>
             </div>
-        </div>
-        <div class="ann-badge upcoming">Upcoming</div>
-    </div>
-
-    <div class="ann-card">
-        <div class="ann-dot upcoming"></div>
-        <div style="flex:1;">
-            <div class="ann-title">Barangay Assembly Meeting</div>
-            <div class="ann-date">⏱ Posted March 10, 2026 · Event: April 15, 2026</div>
-            <div class="ann-body">
-                All registered residents are encouraged to attend the quarterly assembly.
-                Agenda includes budget review and community projects update.
-            </div>
-        </div>
-        <div class="ann-badge upcoming">Upcoming</div>
-    </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 
 </div><!-- /dashboard-content -->
 
