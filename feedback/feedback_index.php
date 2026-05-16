@@ -180,3 +180,50 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+
+<script>
+// Local fallbacks for functions referenced inline in the markup.
+// These let the page work even if the shared `script.js` fails to load.
+function updateChar(el) {
+    try {
+        var count = el.value.length;
+        var counter = document.getElementById('char-count');
+        if (!counter) return;
+        counter.textContent = count + ' / 500 characters';
+        if (count > 450) counter.classList.add('warn'); else counter.classList.remove('warn');
+    } catch (e) { console.error(e); }
+}
+
+function selectRating(btn) {
+    try {
+        var buttons = document.querySelectorAll('.rating-btn');
+        buttons.forEach(function(b){ b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        var arr = Array.from(buttons);
+        var idx = arr.indexOf(btn);
+        var hidden = document.getElementById('fb-rating');
+        if (hidden) hidden.value = idx >= 0 ? (idx + 1) : 0;
+    } catch (e) { console.error(e); }
+}
+
+function submitFeedback() {
+    try {
+        var form = document.getElementById('feedback-form');
+        if (!form) return;
+        // basic client-side validation similar to server expectations
+        var purok = document.getElementById('fb-purok')?.value;
+        var subject = document.getElementById('fb-subject')?.value.trim();
+        var msg = document.getElementById('fb-message')?.value.trim();
+        var cat = document.getElementById('fb-category')?.value;
+        if (!purok || !subject || !msg || !cat) {
+            if (typeof showFormError === 'function') {
+                showFormError('Please fill in all required fields marked with *');
+            } else {
+                alert('Please fill in all required fields marked with *');
+            }
+            return;
+        }
+        form.submit();
+    } catch (e) { console.error(e); }
+}
+</script>
