@@ -10,6 +10,41 @@
 $pageTitle  = 'Submit Feedback';
 $activePage = 'feedback';
 
+$feedbackMessage = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = isset($_POST['name']) ? trim($_POST['name']) : '';
+    $purok = isset($_POST['purok']) ? trim($_POST['purok']) : '';
+    $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+    $subject = isset($_POST['subject']) ? trim($_POST['subject']) : '';
+    $message = isset($_POST['message']) ? trim($_POST['message']) : '';
+    $rating = isset($_POST['rating']) ? (int) $_POST['rating'] : 0;
+
+    $conn = mysqli_connect('127.0.0.1', 'root', '', 'barangay_system');
+    if ($conn) {
+        mysqli_set_charset($conn, 'utf8mb4');
+        if ($purok !== '' && $category !== '' && $subject !== '' && $message !== '') {
+            $stmt = mysqli_prepare($conn, 'INSERT INTO feedback (ResidentName, Purok, Feedback_Category, Message_Subject, Message_content, Rating, Is_read, DateSubmitted) VALUES (?, ?, ?, ?, ?, ?, 0, CURDATE())');
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, 'sssssi', $name, $purok, $category, $subject, $message, $rating);
+                if (mysqli_stmt_execute($stmt)) {
+                    mysqli_stmt_close($stmt);
+                    mysqli_close($conn);
+                    header('Location: feedback_index.php?submitted=1');
+                    exit;
+                }
+                mysqli_stmt_close($stmt);
+            }
+        }
+        mysqli_close($conn);
+    }
+    $feedbackMessage = 'Could not save feedback.';
+}
+
+if (isset($_GET['submitted'])) {
+    $feedbackMessage = 'Feedback submitted successfully.';
+}
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -37,7 +72,13 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-gold-strip"></div>
 
-        <div class="form-body">
+        <form class="form-body" id="feedback-form" method="post" action="">
+
+            <?php if ($feedbackMessage !== ''): ?>
+                <div class="alert alert-success" style="margin-bottom:16px;">
+                    <?= htmlspecialchars($feedbackMessage) ?>
+                </div>
+            <?php endif; ?>
 
             <!-- ── YOUR INFORMATION ── -->
             <div class="form-section-label">Your Information</div>
@@ -46,13 +87,13 @@ require_once __DIR__ . '/../includes/header.php';
                 <label class="form-label" for="fb-name">
                     Full Name <span style="color:var(--gray-400);font-weight:400;">(Optional)</span>
                 </label>
-                <input class="form-input" type="text" id="fb-name"
-                       placeholder="Juan Dela Cruz" autocomplete="name">
+                  <input class="form-input" type="text" id="fb-name" name="name"
+                      placeholder="Juan Dela Cruz" autocomplete="name">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="fb-purok">Purok / Zone</label>
-                <select class="form-select" id="fb-purok">
+                <select class="form-select" id="fb-purok" name="purok">
                     <option value="" disabled selected>Select your purok</option>
                     <option>Purok 1 – Sampaguita</option>
                     <option>Purok 2 – Narra</option>
@@ -68,7 +109,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div class="form-group">
                 <label class="form-label" for="fb-category">Category <span>*</span></label>
-                <select class="form-select" id="fb-category">
+                <select class="form-select" id="fb-category" name="category">
                     <option value="" disabled selected>Select a category</option>
                     <option>Announcement / Information</option>
                     <option>Health &amp; Sanitation</option>
@@ -83,13 +124,13 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div class="form-group">
                 <label class="form-label" for="fb-subject">Subject / Title <span>*</span></label>
-                <input class="form-input" type="text" id="fb-subject"
-                       placeholder="e.g. Request for road repair on Calle X">
+                  <input class="form-input" type="text" id="fb-subject" name="subject"
+                      placeholder="e.g. Request for road repair on Calle X">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="fb-message">Your Message <span>*</span></label>
-                <textarea class="form-textarea" id="fb-message"
+                <textarea class="form-textarea" id="fb-message" name="message"
                           placeholder="Please describe your concern or suggestion in detail..."
                           maxlength="500"
                           oninput="updateChar(this)"></textarea>
@@ -102,11 +143,11 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="form-group">
                 <label class="form-label">How do you rate our barangay services?</label>
                 <div class="rating-row">
-                    <button class="rating-btn" onclick="selectRating(this)" title="Very Dissatisfied">😞</button>
-                    <button class="rating-btn" onclick="selectRating(this)" title="Dissatisfied">😕</button>
-                    <button class="rating-btn" onclick="selectRating(this)" title="Neutral">😐</button>
-                    <button class="rating-btn" onclick="selectRating(this)" title="Satisfied">🙂</button>
-                    <button class="rating-btn" onclick="selectRating(this)" title="Very Satisfied">😄</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this)" title="Very Dissatisfied">😞</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this)" title="Dissatisfied">😕</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this)" title="Neutral">😐</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this)" title="Satisfied">🙂</button>
+                    <button type="button" class="rating-btn" onclick="selectRating(this)" title="Very Satisfied">😄</button>
                 </div>
             </div>
 
@@ -116,12 +157,14 @@ require_once __DIR__ . '/../includes/header.php';
                 For urgent matters, please visit the Barangay Hall during office hours.
             </div>
 
+            <input type="hidden" id="fb-rating" name="rating" value="0">
+
             <!-- Submit -->
-            <button class="btn-submit-card" onclick="submitFeedback()">
+            <button type="button" class="btn-submit-card" onclick="submitFeedback()">
                 Submit My Feedback
             </button>
 
-        </div><!-- /form-body -->
+        </form><!-- /form-body -->
     </div><!-- /form-card -->
 </div><!-- /form-container -->
 

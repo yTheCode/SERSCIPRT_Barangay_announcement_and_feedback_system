@@ -23,47 +23,62 @@ if (isset($_SESSION['message'])) {
 // Rating labels map
 $rating_emojis = array(1 => '😞', 2 => '😕', 3 => '😐', 4 => '🙂', 5 => '😄');
 
-// TODO: Replace sample data with a real SELECT query.
-// SQL guy:
-// SELECT FeedbackID, ResidentName, Purok, Feedback_Category,
-//        Message_Subject, Message_content, Rating, Is_read, DateSubmitted
-// FROM FEEDBACK
-// ORDER BY DateSubmitted DESC
-$feedbacks = array(
-    array(
-        'FeedbackID'        => 1,
-        'ResidentName'      => 'Maria Santos',
-        'Purok'             => 'Purok 1 – Sampaguita',
-        'Feedback_Category' => 'Infrastructure & Roads',
-        'Message_Subject'   => 'Road repair needed on Calle Pasonanca',
-        'Message_content'   => 'The road in front of our barangay center has many potholes that need immediate repair. Residents, especially motorcyclists, are at risk of accidents.',
-        'Rating'            => 3,
-        'Is_read'           => 1,
-        'DateSubmitted'     => '2024-05-02',
-    ),
-    array(
-        'FeedbackID'        => 2,
-        'ResidentName'      => 'Juan Dela Cruz',
-        'Purok'             => 'Purok 2 – Narra',
-        'Feedback_Category' => 'Health & Sanitation',
-        'Message_Subject'   => 'Thank you for the health program!',
-        'Message_content'   => 'The recent health and wellness program organized by the barangay was very helpful to our community. The free check-ups and medicines were greatly appreciated.',
-        'Rating'            => 5,
-        'Is_read'           => 0,
-        'DateSubmitted'     => '2024-05-03',
-    ),
-    array(
-        'FeedbackID'        => 3,
-        'ResidentName'      => '',
-        'Purok'             => 'Purok 3 – Maharlika',
-        'Feedback_Category' => 'Health & Sanitation',
-        'Message_Subject'   => 'Request for regular garbage collection schedule',
-        'Message_content'   => 'Can the barangay provide a more regular garbage collection schedule? Currently it is inconsistent and sometimes garbage piles up for several days.',
-        'Rating'            => 2,
-        'Is_read'           => 1,
-        'DateSubmitted'     => '2024-05-04',
-    ),
-);
+// Try to load from database; if unavailable, fall back to sample data below.
+$feedbacks = array();
+$dbConn = @mysqli_connect('127.0.0.1', 'root', '', 'barangay_system');
+if ($dbConn) {
+    mysqli_set_charset($dbConn, 'utf8mb4');
+    $sql = "SELECT FeedbackID, ResidentName, Purok, Feedback_Category, Message_Subject, Message_content, Rating, Is_read, DateSubmitted FROM feedback ORDER BY DateSubmitted DESC";
+    if ($res = mysqli_query($dbConn, $sql)) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            // Normalize types
+            $row['Rating'] = isset($row['Rating']) ? (int)$row['Rating'] : 0;
+            $row['Is_read'] = isset($row['Is_read']) ? (int)$row['Is_read'] : 0;
+            $feedbacks[] = $row;
+        }
+        mysqli_free_result($res);
+    }
+    mysqli_close($dbConn);
+}
+
+// If DB was empty or unavailable, use sample data for testing.
+if (empty($feedbacks)) {
+    $feedbacks = array(
+        array(
+            'FeedbackID'        => 1,
+            'ResidentName'      => 'Maria Santos',
+            'Purok'             => 'Purok 1 – Sampaguita',
+            'Feedback_Category' => 'Infrastructure & Roads',
+            'Message_Subject'   => 'Road repair needed on Calle Pasonanca',
+            'Message_content'   => 'The road in front of our barangay center has many potholes that need immediate repair. Residents, especially motorcyclists, are at risk of accidents.',
+            'Rating'            => 3,
+            'Is_read'           => 1,
+            'DateSubmitted'     => '2024-05-02',
+        ),
+        array(
+            'FeedbackID'        => 2,
+            'ResidentName'      => 'Juan Dela Cruz',
+            'Purok'             => 'Purok 2 – Narra',
+            'Feedback_Category' => 'Health & Sanitation',
+            'Message_Subject'   => 'Thank you for the health program!',
+            'Message_content'   => 'The recent health and wellness program organized by the barangay was very helpful to our community. The free check-ups and medicines were greatly appreciated.',
+            'Rating'            => 5,
+            'Is_read'           => 0,
+            'DateSubmitted'     => '2024-05-03',
+        ),
+        array(
+            'FeedbackID'        => 3,
+            'ResidentName'      => '',
+            'Purok'             => 'Purok 3 – Maharlika',
+            'Feedback_Category' => 'Health & Sanitation',
+            'Message_Subject'   => 'Request for regular garbage collection schedule',
+            'Message_content'   => 'Can the barangay provide a more regular garbage collection schedule? Currently it is inconsistent and sometimes garbage piles up for several days.',
+            'Rating'            => 2,
+            'Is_read'           => 1,
+            'DateSubmitted'     => '2024-05-04',
+        ),
+    );
+}
 
 // Count unread
 $unread_count = 0;

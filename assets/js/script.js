@@ -29,6 +29,12 @@ function updateChar(el) {
 function selectRating(btn) {
     document.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
+    // Set hidden rating input (1..5) based on button position
+    const buttons = Array.from(document.querySelectorAll('.rating-btn'));
+    const idx = buttons.indexOf(btn);
+    const rating = idx >= 0 ? (idx + 1) : 0;
+    const hidden = document.getElementById('fb-rating');
+    if (hidden) hidden.value = rating;
 }
 
 // ── Feedback: Submit ──
@@ -39,6 +45,13 @@ function submitFeedback() {
 
     if (!subject || !msg || !cat) {
         showFormError('Please fill in all required fields marked with *');
+        return;
+    }
+
+    // submit the form normally so server can save to DB and redirect
+    const form = document.getElementById('feedback-form');
+    if (form) {
+        form.submit();
         return;
     }
 
