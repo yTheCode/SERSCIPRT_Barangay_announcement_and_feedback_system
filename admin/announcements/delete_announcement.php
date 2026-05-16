@@ -34,5 +34,4 @@ if ($stmt->execute()) {
     echo "Failed to delete announcement.";
 }
 $stmt->close();
-
 ?>
