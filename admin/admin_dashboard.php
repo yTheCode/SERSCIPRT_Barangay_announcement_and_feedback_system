@@ -41,7 +41,7 @@ $avatar_letter = strtoupper(substr($username, 0, 1));
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Shared stylesheet -->
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/style/style.css">
 </head>
 <body>
 
