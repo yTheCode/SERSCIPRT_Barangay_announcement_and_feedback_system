@@ -22,17 +22,25 @@ if (isset($_SESSION['message'])) {
 
 // Get real counts from the database where possible. If DB is unavailable
 // fall back to zero so the dashboard doesn't show stale sample numbers.
-$total_announcements = 2; // leave announcements count to the announcements owner
+
+$total_announcements = 0;
 $total_feedback      = 0;
 $unread_feedback     = 0;
 
 $db = @mysqli_connect('127.0.0.1', 'root', '', 'barangay_system');
 if ($db) {
     mysqli_set_charset($db, 'utf8mb4');
+    // Announcements count
+    $res = mysqli_query($db, "SELECT COUNT(*) AS c FROM announcements");
+    if ($res && $row = mysqli_fetch_assoc($res)) $total_announcements = (int)$row['c'];
+    if ($res) mysqli_free_result($res);
+
+    // Feedback count
     $res = mysqli_query($db, "SELECT COUNT(*) AS c FROM feedback");
     if ($res && $row = mysqli_fetch_assoc($res)) $total_feedback = (int)$row['c'];
     if ($res) mysqli_free_result($res);
 
+    // Unread feedback count
     $res = mysqli_query($db, "SELECT COUNT(*) AS c FROM feedback WHERE Is_read = 0");
     if ($res && $row = mysqli_fetch_assoc($res)) $unread_feedback = (int)$row['c'];
     if ($res) mysqli_free_result($res);
